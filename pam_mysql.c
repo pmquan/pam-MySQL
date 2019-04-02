@@ -3859,7 +3859,8 @@ static pam_mysql_err_t pam_mysql_check_passwd(pam_mysql_ctx_t *ctx,
 #ifdef HAVE_PAM_MYSQL_SHA1_DATA
                                 unsigned char* hash;
                                 size_t sha1_size;
-                                Base64Decode(row[0], &hash, &sha1_size);
+				char *striped_pass = row[0] + 5;
+                                Base64Decode(striped_pass, &hash, &sha1_size);
                                 size_t salt_length = sha1_size - 20;
                                 unsigned char salt[salt_length];
                                 memcpy(salt, &(hash[20]), salt_length);
@@ -3867,7 +3868,10 @@ static pam_mysql_err_t pam_mysql_check_passwd(pam_mysql_ctx_t *ctx,
                                 char buf[41];
                                 pam_mysql_ssha_data((unsigned char*)passwd, strlen(passwd), salt, salt_length,
                                     buf);
-                                vresult = strcmp(row[0], buf);
+
+				syslog(LOG_DEBUG, PAM_MYSQL_LOG_PREFIX "EXPECT %s - GOT %s", buf, striped_pass);
+
+                                vresult = strcmp(striped_pass, buf);
                                 {
                                     char *p = buf - 1;
                                     while (*(++p)) *p = '\0';
